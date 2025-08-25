@@ -27,3 +27,4 @@ mmClasicaOpenMP:
 # Elimina los ejecutables generados
 clean:
 	$(RM) $(PROGRAMAS)
+
