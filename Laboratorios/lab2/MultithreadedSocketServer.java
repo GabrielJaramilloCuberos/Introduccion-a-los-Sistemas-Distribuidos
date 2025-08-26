@@ -32,7 +32,6 @@ public class MultithreadedSocketServer {
     } catch (Exception e) {
       System.out.println(e); // Manejo de excepciones
     }
-    server.close();
   }
 }
 
