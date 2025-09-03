@@ -29,6 +29,7 @@ public class MultithreadedSocketServer {
         ServerClientThread sct = new ServerClientThread(serverClient, counter);
         sct.start(); // Inicia el hilo
       }
+
     } catch (Exception e) {
       System.out.println(e); // Manejo de excepciones
     }
