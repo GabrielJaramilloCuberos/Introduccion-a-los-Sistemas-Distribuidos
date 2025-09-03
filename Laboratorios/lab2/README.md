@@ -6,3 +6,17 @@ El cliente es una aplicación de consola sencilla que se conecta al servidor. Su
 
 ## 🖥️ Descripción del Servidor (MultithreadedSocketServer)
 El servidor actúa como el punto de escucha del sistema. Inicia un socket en el puerto 8888 y se mantiene en un bucle infinito, esperando nuevas conexiones. Cuando un cliente solicita una conexión, el servidor la acepta y delega la gestión de esa comunicación a una instancia de ServerClientThread. Este hilo dedicado se encarga de todo el ciclo de vida de la solicitud: recibir el número del cliente, calcular su cuadrado y enviar el resultado de vuelta, garantizando así que el hilo principal del servidor esté siempre disponible para aceptar nuevas conexiones.
+
+### 💡 Nota importante sobre las direcciones IP en el laboratorio TCPClient
+
+Para que el programa **TCPClient** se conecte correctamente con el **servidor**, es necesario **modificar la dirección IP** en el código del cliente.
+
+Por defecto, muchos ejemplos usan `127.0.0.1` (localhost), lo cual solo funciona si el cliente y el servidor se ejecutan en el **mismo computador**.  
+Sin embargo, en este laboratorio se requiere que **servidor y cliente estén en computadores diferentes**, por lo tanto:
+
+- Debes reemplazar la IP en el código del cliente por la **IP de la máquina donde se ejecuta el servidor**.  
+  Ejemplo:
+
+  ```java
+  // En TCPClient.java
+  Socket socket = new Socket("192.168.1.15", 8888);
