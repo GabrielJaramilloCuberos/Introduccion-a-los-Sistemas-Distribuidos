@@ -1,6 +1,6 @@
 /**************************************************************************************
-* Fecha: 02/09/2025
-* Autor: Roberth Méndez
+* Fecha: 05/09/2025
+* Autores: Mariana Osorio Vasquez, Gabriel Jaramillo, Roberth Méndez, Juan Esteban Vera
 * Tema:
 * - Cliente RMI en Java
 * Descripción:
