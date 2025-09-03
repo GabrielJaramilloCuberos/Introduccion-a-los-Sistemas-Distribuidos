@@ -14,6 +14,7 @@
 * - Envía las solicitudes al servidor, recibe la respuesta y la imprime en consola.
 **************************************************************************************/
 
+import java.net.InetAddress;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.List;
@@ -31,7 +32,7 @@ public class ClienteRMI {
             Biblioteca bibliotecaRemota = (Biblioteca) registry.lookup("BibliotecaService");
 
             // Se obtiene el nombre de usuario del sistema para usarlo como identificador del cliente (puede ser el usuario del SO o un nombre fijo)
-            String clienteId = System.getProperty("user.name");
+            String clienteId = System.getProperty("java.rmi.server.hostname", InetAddress.getLocalHost().getHostAddress());
             // Se conecta el cliente al servidor usando su identificador
             bibliotecaRemota.conectar(clienteId);
 
