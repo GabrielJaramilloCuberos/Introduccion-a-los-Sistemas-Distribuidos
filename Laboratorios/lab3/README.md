@@ -46,7 +46,7 @@ Sus responsabilidades principales son:
 lab3/
 └── src/
     ├── cliente/
-    │   └── ClienteRMI.java
+    │   ├── ClienteRMI.java
     │   └── Biblioteca.java
     └── servidor/
         ├── BaseDatos.java
