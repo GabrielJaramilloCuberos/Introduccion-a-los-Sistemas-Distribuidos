@@ -4,6 +4,8 @@ Este laboratorio implementa un sistema **Cliente/Servidor** utilizando **Java RM
 El servidor actúa como una biblioteca que administra los libros y ejemplares disponibles, mientras que los clientes pueden conectarse para realizar operaciones como **préstamos, devoluciones, renovaciones y consultas de reportes**.  
 
 La arquitectura sigue el modelo distribuido en el que múltiples clientes pueden acceder simultáneamente al servicio remoto ofrecido por el servidor.
+En el siguiente enlace se encuentra un vídeo mostrando el funcionamiento del sistema usando tres máquinas virtuales asignadas por las Pontificia Universidad Javeriana como dos clientes y un servidor:
+https://www.youtube.com/watch?v=OHnEojjhv_c
 
 ---
 
@@ -35,7 +37,6 @@ Sus responsabilidades principales son:
   - Procesar préstamos, devoluciones y renovaciones.
   - Generar reportes de disponibilidad de ejemplares.
   - Registrar clientes conectados/desconectados.
-- **Guardar automáticamente la base de datos** en el archivo `salida.txt` cuando el servidor se apaga, gracias a un `shutdown hook`.
 
 ---
 
@@ -46,6 +47,7 @@ lab3/
 └── src/
     ├── cliente/
     │   └── ClienteRMI.java
+    │   └── Biblioteca.java
     └── servidor/
         ├── BaseDatos.java
         ├── Biblioteca.java
@@ -53,7 +55,6 @@ lab3/
         ├── Ejemplar.java
         ├── Libro.java
         ├── libros.txt
-        ├── salida.txt
         └── ServidorRMI.java
 ```
 
@@ -98,7 +99,7 @@ lab3/
 ---
 
 ## 👨‍💻 Autores
-- Mariana Osorio Vásquez  
+- Mariana Osorio   
 - Gabriel Jaramillo  
 - Roberth Méndez  
 - Juan Esteban Vera  
