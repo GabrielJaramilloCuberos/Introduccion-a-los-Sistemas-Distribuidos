@@ -19,6 +19,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.List;
 import java.util.Scanner;
+import java.net.InetAddress;
 
 public class ClienteRMI {
 
