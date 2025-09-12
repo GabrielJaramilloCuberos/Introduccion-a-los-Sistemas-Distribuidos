@@ -31,7 +31,7 @@ Este proyecto contiene dos implementaciones principales en **Java**:
 
 ## 🚀 Ejecución
 
-### **1️⃣ Socket Mailbox**
+### ** 1. Socket Mailbox**
 #### Ejecución TCP:
 En dos terminales separadas:
 
@@ -68,7 +68,7 @@ java socketudpcli <IP_DEL_SERVIDOR>
 
 ---
 
-### **2️⃣ ThreadsJar**
+### ** 2. ThreadsJar**
 #### Ejecución con Threads:
 Compila y ejecuta la clase principal:
 ```bash
@@ -127,5 +127,6 @@ Simulación de atención en caja:
    - Añadir multithreading en el servidor TCP para soportar múltiples clientes concurrentes.  
    - En UDP, implementar confirmaciones a nivel de aplicación si se necesita fiabilidad.  
 4. **Aplicaciones reales:** servidores web, sistemas bancarios, streaming, videojuegos en línea, etc.
+
 
 ---
