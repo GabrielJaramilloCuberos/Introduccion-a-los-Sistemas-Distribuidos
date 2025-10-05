@@ -1,6 +1,6 @@
 # 📘 Sistema Distribuido de Préstamo, Renovación y Devolución de Libros
 
-Autores: Gabriel Jaramillo Cuberos, Roberth Méndez, Mariana Osorio, Juan Esteban Vera
+Autores: Gabriel Jaramillo Cuberos, Roberth Méndez Rivera, Mariana Osorio Vásquez, Juan Esteban Vera Garzón 
 
 ## 🧩 Descripción general
 Este proyecto implementa un sistema distribuido para la gestión de préstamos, devoluciones y renovaciones de libros en una biblioteca con múltiples sedes.
@@ -79,6 +79,50 @@ GA1 <-. Replicación async .-> GA2
 
 ```
 ## 🖥️ Despliegue
+### Diagrama de despliegue
+```mermaid
+graph LR 
+
+subgraph PC_A Máquina A - Sede 1 
+
+GC1 
+
+A1D 
+
+A1R 
+
+end 
+
+subgraph PC_B Máquina B - Sede 2 
+
+GC2 
+
+A2D 
+
+A2R 
+
+end 
+
+subgraph PC_C Máquina C - Clientes 
+
+PSx 
+
+end 
+
+ 
+
+PSx --- GC1 
+
+PSx --- GC2 
+
+GC1 --- A1D 
+
+GC1 --- A1R 
+
+GC2 --- A2D 
+
+GC2 --- A2R 
+```
 
 ### Requisitos:
 
