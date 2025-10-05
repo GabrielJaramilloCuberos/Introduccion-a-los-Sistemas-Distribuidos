@@ -223,6 +223,7 @@ Dos o más máquinas en red local (LAN)
 Archivos CSV y de carga en la carpeta data/
 
 ### Estructura de carpetas:
+```
 Lab3/
 │── src/
 │   ├── GC.java
@@ -235,7 +236,7 @@ Lab3/
 │   ├── carga_ps1.txt
 │── logs/
 │── README.md
-
+```
 ## Diagrama de fallos 
 ```mermaid
 graph TD
