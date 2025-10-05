@@ -78,6 +78,97 @@ A2R -- Actualización --> GA2
 GA1 <-. Replicación async .-> GA2
 
 ```
+
+## Diagrama de componentes 
+``` mermaid
+graph LR
+  subgraph Cliente
+    PS[Proceso Solicitante]
+  end
+
+  subgraph Sede_1
+    GC1[Gestor de Carga]
+    A1R[Actor Renovación]
+    A1D[Actor Devolución]
+    GA1[Gestor de Almacenamiento]
+  end
+
+  subgraph Sede_2
+    GC2[Gestor de Carga]
+    A2R[Actor Renovación]
+    A2D[Actor Devolución]
+    GA2[Gestor de Almacenamiento]
+  end
+
+  PS --> GC1
+  PS --> GC2
+  GC1 --> A1R
+  GC1 --> A1D
+  A1R --> GA1
+  A1D --> GA1
+  GC2 --> A2R
+  GC2 --> A2D
+  A2R --> GA2
+  A2D --> GA2
+  GA1 <-. Sincronización .-> GA2
+```
+## Interacción
+### Devolución 
+``` mermaid
+sequenceDiagram 
+
+participant PS 
+
+participant GC 
+
+participant Broker as ZeroMQ PUB/SUB 
+
+participant ActorD as Actor Devolución 
+
+participant GA as Gestor Almacenamiento 
+
+ 
+
+PS->>GC: POST /devolucion {libroId, sede, fecha} 
+
+GC-->>PS: 202 OK (aceptada) 
+
+GC->>Broker: PUB "devolucion" {libroId, sede, fecha} 
+
+Broker-->>ActorD: entrega msg "devolucion" 
+
+ActorD->>GA: updateLibroDevolucion(libroId, fecha) 
+
+GA-->>ActorD: OK 
+```
+### Renovación
+```mermaid
+sequenceDiagram 
+
+participant PS 
+
+participant GC 
+
+participant Broker as ZeroMQ PUB/SUB 
+
+participant ActorR as Actor Renovación 
+
+participant GA as Gestor Almacenamiento 
+
+ 
+
+PS->>GC: POST /renovacion {libroId, sede, fechaActual} 
+
+GC-->>PS: 202 OK nuevaFecha = +7d* 
+
+GC->>Broker: PUB "renovacion" {libroId, fechaActual, nuevaFecha} 
+
+Broker-->>ActorR: entrega msg "renovacion" 
+
+ActorR->>GA: updateLibroRenovacion libroId, nuevaFecha máx. 2 renov. 
+
+GA-->>ActorR: OK/ERROR límite 
+```
 ## 🖥️ Despliegue
 ### Diagrama de despliegue
 ```mermaid
@@ -145,6 +236,41 @@ Lab3/
 │── logs/
 │── README.md
 
+## Diagrama de fallos 
+```mermaid
+graph TD
+  subgraph Sede_1
+    GC1[GestorCarga 1]
+    GA1[GestorAlmacenamiento 1]
+  end
+
+  subgraph Sede_2
+    GC2[GestorCarga 2]
+    GA2[GestorAlmacenamiento 2]
+  end
+
+  GC1 -- Heartbeat --> GC2
+  GC2 -- Heartbeat --> GC1
+
+  GA1 -- Replicación periódica --> GA2
+  GA2 -- Replicación periódica --> GA1
+
+  GC1 --> AL1[Registro de alertas y logs]
+  GC2 --> AL2[Registro de alertas y logs]
+```
+## Modelo de seguridad 
+``` mermaid
+graph LR
+  PS[Proceso Solicitante PS]
+  GC[Gestor de Carga GC]
+  A[Actores Renovación / Devolucion]
+  GA[Gestor de Almacenamiento GA]
+
+  PS -- Comunicación segura TLS/SSL --> GC
+  GC -- Canal cifrado PUB/SUB --> A
+  A -- Autenticación y validación --> GA
+  GA -- Logs cifrados --> PS
+```
 
 ## ⚙️ Ejecución paso a paso
 1. Compilar
