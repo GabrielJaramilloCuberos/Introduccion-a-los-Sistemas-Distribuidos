@@ -226,15 +226,22 @@ Archivos CSV y de carga en la carpeta data/
 ```
 Lab3/
 │── src/
-│   ├── GC.java
-│   ├── PS.java
-│   ├── Actor.java
-│   ├── GA.java
-│   ├── Persistencia.java
-│── data/
-│   ├── libros.csv
-│   ├── carga_ps1.txt
-│── logs/
+│   ├── Gestor_Almacenamiento/
+|        ├──BaseDatos.java
+|        ├──Ejemplar.java
+|        ├──GestorAlmacenamiento.java
+|        ├──GestorAlmacenamientompl.java
+|        ├──Libro.java
+|        ├──ServidorGA.java
+|   ├── Gestor_Carga/
+|        ├──ActorClient.java
+|        ├──BibliotecaGC.java
+|        ├──BibliotecaGClmpl.java
+|        ├──Message.java
+|        ├──ServidorGC.java
+│   ├── ClienteBatch.java
+│   ├── libros.txt
+│   ├── peticiones.txt
 │── README.md
 ```
 ## Diagrama de fallos 
