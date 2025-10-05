@@ -7,6 +7,15 @@ Este proyecto implementa un sistema distribuido para la gestión de préstamos, 
 La arquitectura se basa en ZeroMQ (JeroMQ para Java) y usa los patrones REQ/REP y PUB/SUB para permitir comunicación entre los componentes.
 
 ## 🏗️ Arquitectura del sistema
+El diagrama arquitectónico muestra la estructura global del sistema distribuido de préstamo de libros y la relación entre sus principales componentes desplegados en dos sedes. 
+
+Cada sede cuenta con: 
+- Un Gestor de Carga (GC) que recibe las solicitudes de los clientes y las publica hacia los actores.
+- Dos Actores especializados: uno para renovaciones y otro para devoluciones, que consumen los mensajes del GC mediante el patrón PUB/SUB.
+- Un Gestor de Almacenamiento (GA) responsable de mantener la base de datos local y sincronizar los cambios con su réplica en la otra sede. 
+
+Los Procesos Solicitantes (PS), ubicados en la capa de clientes, pueden conectarse a cualquiera de los GC disponibles para enviar solicitudes de renovación o devolución. 
+La comunicación entre los GA de ambas sedes se realiza de forma asíncrona mediante replicación, garantizando consistencia eventual. Este diseño distribuye la carga de procesamiento y asegura tolerancia a fallos mediante redundancia de sedes. 
 
 ```mermaid
 graph LR 
@@ -78,41 +87,17 @@ A2R -- Actualización --> GA2
 GA1 <-. Replicación async .-> GA2
 
 ```
+## Modelo de interacción
+Los diagramas de interacción describen el flujo dinámico de mensajes entre los procesos distribuidos para las operaciones principales: devolución y renovación. 
 
-## Diagrama de componentes 
-``` mermaid
-graph LR
-  subgraph Cliente
-    PS[Proceso Solicitante]
-  end
+En ambos casos, la secuencia sigue el patrón asíncrono de confirmación inmediata al cliente y procesamiento en segundo plano: 
 
-  subgraph Sede_1
-    GC1[Gestor de Carga]
-    A1R[Actor Renovación]
-    A1D[Actor Devolución]
-    GA1[Gestor de Almacenamiento]
-  end
+1. El Proceso Solicitante (PS) envía la solicitud al Gestor de Carga (GC).
+2. El GC responde con un estado 202 Accepted para liberar al PS rápidamente y luego publica el evento en el canal ZeroMQ correspondiente (topic: renovación o devolución).
+3. El Actor suscrito al tópico recibe el mensaje, ejecuta la lógica de negocio (verifica disponibilidad o número de renovaciones) y actualiza el estado del libro en el Gestor de Almacenamiento (GA).
+4. El GA confirma la operación (OK o error) y registra el cambio en el archivo de persistencia local. 
 
-  subgraph Sede_2
-    GC2[Gestor de Carga]
-    A2R[Actor Renovación]
-    A2D[Actor Devolución]
-    GA2[Gestor de Almacenamiento]
-  end
-
-  PS --> GC1
-  PS --> GC2
-  GC1 --> A1R
-  GC1 --> A1D
-  A1R --> GA1
-  A1D --> GA1
-  GC2 --> A2R
-  GC2 --> A2D
-  A2R --> GA2
-  A2D --> GA2
-  GA1 <-. Sincronización .-> GA2
-```
-## Interacción
+Esta arquitectura basada en mensajería desacoplada permite alta concurrencia, resiliencia ante fallos y tiempos de respuesta bajos para el cliente. 
 ### Devolución 
 ``` mermaid
 sequenceDiagram 
@@ -169,8 +154,97 @@ ActorR->>GA: updateLibroRenovacion libroId, nuevaFecha máx. 2 renov.
 
 GA-->>ActorR: OK/ERROR límite 
 ```
+
+## Modelo de fallos 
+Este diagrama de fallos muestra los mecanismos de tolerancia implementados: 
+- Los Gestores de Carga (GC1 y GC2) intercambian heartbeats periódicos para detectar caídas de nodo.
+- Los Gestores de Almacenamiento (GA1 y GA2) sincronizan su estado por replicación periódica asíncrona.
+- Si uno de los GA falla, el otro mantiene los datos hasta restablecer la conexión.
+- Cada GC registra sus eventos de error en un módulo de logs y alertas locales, que luego puede revisarse para diagnóstico. 
+
+```mermaid
+graph TD
+  subgraph Sede_1
+    GC1[GestorCarga 1]
+    GA1[GestorAlmacenamiento 1]
+  end
+
+  subgraph Sede_2
+    GC2[GestorCarga 2]
+    GA2[GestorAlmacenamiento 2]
+  end
+
+  GC1 -- Heartbeat --> GC2
+  GC2 -- Heartbeat --> GC1
+
+  GA1 -- Replicación periódica --> GA2
+  GA2 -- Replicación periódica --> GA1
+
+  GC1 --> AL1[Registro de alertas y logs]
+  GC2 --> AL2[Registro de alertas y logs]
+```
+
+## Modelo de seguridad 
+``` mermaid
+graph LR
+  PS[Proceso Solicitante PS]
+  GC[Gestor de Carga GC]
+  A[Actores Renovación / Devolucion]
+  GA[Gestor de Almacenamiento GA]
+
+  PS -- Comunicación segura TLS/SSL --> GC
+  GC -- Canal cifrado PUB/SUB --> A
+  A -- Autenticación y validación --> GA
+  GA -- Logs cifrados --> PS
+```
+
+## Diagrama de componentes 
+Representa los módulos físicos de software desplegados en cada máquina. Cada sede replica la misma estructura lógica (GC + Actores + GA). 
+
+La sincronización entre GA1 y GA2 se realiza de manera asíncrona, garantizando consistencia eventual. 
+``` mermaid
+graph LR
+  subgraph Cliente
+    PS[Proceso Solicitante]
+  end
+
+  subgraph Sede_1
+    GC1[Gestor de Carga]
+    A1R[Actor Renovación]
+    A1D[Actor Devolución]
+    GA1[Gestor de Almacenamiento]
+  end
+
+  subgraph Sede_2
+    GC2[Gestor de Carga]
+    A2R[Actor Renovación]
+    A2D[Actor Devolución]
+    GA2[Gestor de Almacenamiento]
+  end
+
+  PS --> GC1
+  PS --> GC2
+  GC1 --> A1R
+  GC1 --> A1D
+  A1R --> GA1
+  A1D --> GA1
+  GC2 --> A2R
+  GC2 --> A2D
+  A2R --> GA2
+  A2D --> GA2
+  GA1 <-. Sincronización .-> GA2
+```
+
 ## 🖥️ Despliegue
 ### Diagrama de despliegue
+El diagrama de despliegue representa la distribución física de los componentes del sistema sobre diferentes máquinas de la red. 
+- Máquina A (Sede 1): ejecuta el GC1, el Actor de Renovación 1, el Actor de Devolución 1 y el GA1 (que contiene la base de datos primaria o réplica líder).
+- Máquina B (Sede 2): ejecuta el GC2, el Actor de Renovación 2, el Actor de Devolución 2 y el GA2 (réplica seguidora).
+- Máquina C (Clientes): aloja varios Procesos Solicitantes (PS) que generan carga de solicitudes hacia las sedes.   
+
+La comunicación entre PS y GC utiliza el patrón REQ/REP, mientras que la comunicación entre GC y Actores usa PUB/SUB. 
+Las GA de ambas sedes intercambian actualizaciones mediante replicación periódica y pueden continuar funcionando en modo degradado si una sede falla. 
+Este despliegue garantiza disponibilidad, balanceo de carga y redundancia geográfica, cumpliendo los principios básicos de los sistemas distribuidos. 
 ```mermaid
 graph LR 
 
@@ -244,41 +318,24 @@ Lab3/
 │   ├── peticiones.txt
 │── README.md
 ```
-## Diagrama de fallos 
+
+## Diagrama de secuencia
+El Diagrama de Secuencia representa el flujo completo de interacción entre los componentes del sistema distribuido durante la ejecución de una operación (ya sea renovación o devolución). 
 ```mermaid
-graph TD
-  subgraph Sede_1
-    GC1[GestorCarga 1]
-    GA1[GestorAlmacenamiento 1]
-  end
+sequenceDiagram
+    participant PS as Proceso Solicitante
+    participant GC as Gestor de Carga
+    participant A as Actor (Renovación / Devolución)
+    participant GA as Gestor de Almacenamiento
 
-  subgraph Sede_2
-    GC2[GestorCarga 2]
-    GA2[GestorAlmacenamiento 2]
-  end
-
-  GC1 -- Heartbeat --> GC2
-  GC2 -- Heartbeat --> GC1
-
-  GA1 -- Replicación periódica --> GA2
-  GA2 -- Replicación periódica --> GA1
-
-  GC1 --> AL1[Registro de alertas y logs]
-  GC2 --> AL2[Registro de alertas y logs]
+    PS->>GC: Enviar solicitud (RENOVACIÓN / DEVOLUCIÓN)
+    GC-->>PS: Respuesta inmediata (202 Aceptada)
+    GC->>A: Publicar mensaje (topic: tipo de operación)
+    A->>GA: Ejecutar actualización en BD local
+    GA-->>A: Confirmar actualización OK/ERROR
+    A-->>GC: Notificar resultado (opcional)
 ```
-## Modelo de seguridad 
-``` mermaid
-graph LR
-  PS[Proceso Solicitante PS]
-  GC[Gestor de Carga GC]
-  A[Actores Renovación / Devolucion]
-  GA[Gestor de Almacenamiento GA]
 
-  PS -- Comunicación segura TLS/SSL --> GC
-  GC -- Canal cifrado PUB/SUB --> A
-  A -- Autenticación y validación --> GA
-  GA -- Logs cifrados --> PS
-```
 
 ## ⚙️ Ejecución paso a paso
 1. Compilar
