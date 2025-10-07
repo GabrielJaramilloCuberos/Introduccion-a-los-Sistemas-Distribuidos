@@ -1,3 +1,17 @@
+/**************************************************************************************
+* Fecha: 10/10/2025
+* Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
+* Tema: 
+* - Proyecto préstamo de libros (Sistema Distribuido)
+* Descripción:
+* - Clase Implementación de Servicio Remoto (GestorAlmacenamientoImpl):
+* - Implementa la interfaz RMI del Gestor de Almacenamiento (GA).
+* - Actúa como el puente entre los Actores y la lógica de la BaseDatos local.
+* - Contiene la lógica para aplicar las operaciones (Devolución y Renovación) 
+* delegándolas a BaseDatos.
+* - Incluye la funcionalidad de replicación asíncrona al Gestor de Almacenamiento 
+* de la sede remota, indicando su rol ("Primario" o "Secundario").
+***************************************************************************************/
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
