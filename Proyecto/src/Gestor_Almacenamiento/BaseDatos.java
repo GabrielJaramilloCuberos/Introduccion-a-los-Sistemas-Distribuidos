@@ -1,3 +1,18 @@
+/**************************************************************************************
+* Fecha: 10/10/2025
+* Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
+* Tema: 
+* - Proyecto préstamo de libros (Sistema Distribuido)
+* Descripción:
+* - Clase de Persistencia Local (BaseDatos):
+* - Implementa la gestión de los libros y sus ejemplares en memoria (ConcurrentHashMap).
+* - Proporciona métodos para cargar y guardar el estado de la BD desde/hacia archivos.
+* - Contiene las operaciones transaccionales (devolver, renovar, prestar) que son
+* invocadas por los Actores de Devolución/Renovación.
+* - Utiliza bloques synchronized (l) para asegurar la **consistencia** y el manejo
+* de **concurrencia** a nivel de libro.
+***************************************************************************************/
+
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
