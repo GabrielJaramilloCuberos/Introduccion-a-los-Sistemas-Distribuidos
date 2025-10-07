@@ -1,3 +1,18 @@
+/**************************************************************************************
+* Fecha: 10/10/2025
+* Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
+* Tema: 
+* - Proyecto préstamo de libros (Sistema Distribuido)
+* Descripción:
+* - Clase Implementación de Servicio Remoto (BibliotecaGCImpl):
+* - Es el Gestor de Carga (GC), punto de entrada para las solicitudes del cliente.
+* - Implementa la mensajería asíncrona usando colecciones concurrentes (`ConcurrentLinkedQueue`) 
+* para simular un Broker de Mensajes interno (colas por tópico: Devolución/Renovación).
+* - Proporciona métodos para recibir solicitudes (`*Async`), devolver una respuesta 
+* inmediata (implícita en el retorno del ID) y guardar el estado.
+* - Maneja el **seguimiento del estado** de cada mensaje (`mapaMensajes`, `estadoMensajes`) 
+* para permitir el polling por parte de los clientes.
+***************************************************************************************/
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.time.LocalDate;
