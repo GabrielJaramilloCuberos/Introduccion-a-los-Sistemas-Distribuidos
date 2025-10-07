@@ -1,3 +1,19 @@
+/**************************************************************************************
+* Fecha: 10/10/2025
+* Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
+* Tema: 
+* - Proyecto préstamo de libros (Sistema Distribuido)
+* Descripción:
+* - Clase Cliente/Actor (ActorClient):
+* - Programa que simula un Actor especializado (Renovación o Devolución) en una sede.
+* - Consume mensajes del Gestor de Carga (GC) mediante polling RMI (`fetchNextMessage`).
+* - Contiene la lógica para conectarse al Gestor de Almacenamiento (GA), intentando 
+* primero la réplica Primary y luego la Replica/Follower para asegurar 
+* tolerancia a fallos.
+* - Aplica la operación en la Base de Datos a través del GA y envía una 
+* confirmación (ACK/NACK) al GC.
+***************************************************************************************/
+
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
