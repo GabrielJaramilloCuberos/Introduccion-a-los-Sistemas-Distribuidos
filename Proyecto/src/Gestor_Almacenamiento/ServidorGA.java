@@ -1,3 +1,18 @@
+/**************************************************************************************
+* Fecha: 10/10/2025
+* Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
+* Tema: 
+* - Proyecto préstamo de libros (Sistema Distribuido)
+* Descripción:
+* - Clase Servidor Principal (ServidorGA):
+* - Programa de arranque para el Gestor de Almacenamiento (GA) en una sede.
+* - Inicializa la BaseDatos, cargándola desde libros.txt.
+* - Expone la implementación del GA (`GestorAlmacenamientoImpl`) como un servicio RMI.
+* - Determina su rol (Primary o Replica/Follower) basado en argumentos de línea de comandos 
+* y registra el servicio RMI con el nombre correspondiente (GestorAlmacenamientoPrimary o GestorAlmacenamientoReplica).
+* - Incluye un Shutdown Hook para asegurar la persistencia de los datos en el archivo 
+* al cerrar el servidor.
+***************************************************************************************/
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
