@@ -1,3 +1,17 @@
+/**************************************************************************************
+* Fecha: 10/10/2025
+* Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
+* Tema: 
+* - Proyecto préstamo de libros (Sistema Distribuido)
+* Descripción:
+* - Clase Cliente (ClienteBatch):
+* - Simula el Proceso Solicitante (PS), cargando y enviando múltiples peticiones 
+* de Devolución o Renovación desde un archivo de texto.
+* - Utiliza RMI para la comunicación con el Gestor de Carga (GC).
+* - Implementa el patrón asíncrono: envía la solicitud (`*Async`), obtiene un 
+* ID de mensaje, y luego realiza polling (`getMessageStatus`) durante 10 segundos
+* para verificar el estado final de la operación.
+***************************************************************************************/
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.rmi.registry.LocateRegistry;
