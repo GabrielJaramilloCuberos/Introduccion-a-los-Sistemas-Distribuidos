@@ -1,3 +1,18 @@
+/**************************************************************************************
+* Fecha: 10/10/2025
+* Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
+* Tema: 
+* - Proyecto préstamo de libros (Sistema Distribuido)
+* Descripción:
+* - Clase Entidad (Libro):
+* - Representa un tipo de libro por su código y nombre.
+* - Contiene una lista de objetos Ejemplar, que son las copias físicas.
+* - Implementa la lógica de negocio para las operaciones de **préstamo, devolución y 
+* renovación sobre sus ejemplares.
+* - Todos los métodos de operación son sincronizados (`synchronized`) para 
+* asegurar la integridad de los datos de sus ejemplares ante accesos concurrentes.
+***************************************************************************************/
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
