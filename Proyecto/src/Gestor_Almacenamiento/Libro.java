@@ -7,7 +7,7 @@
 * - Clase Entidad (Libro):
 * - Representa un tipo de libro por su código y nombre.
 * - Contiene una lista de objetos Ejemplar, que son las copias físicas.
-* - Implementa la lógica de negocio para las operaciones de **préstamo, devolución y 
+* - Implementa la lógica de negocio para las operaciones de préstamo, devolución y 
 * renovación sobre sus ejemplares.
 * - Todos los métodos de operación son sincronizados (`synchronized`) para 
 * asegurar la integridad de los datos de sus ejemplares ante accesos concurrentes.
