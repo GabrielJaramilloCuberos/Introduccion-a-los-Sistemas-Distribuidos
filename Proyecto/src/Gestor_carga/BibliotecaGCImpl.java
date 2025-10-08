@@ -7,105 +7,86 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
-// Implementación del Gestor de Carga (GC)
 public class BibliotecaGCImpl extends UnicastRemoteObject implements BibliotecaGC {
-
     private static final long serialVersionUID = 1L;
 
-    // Cola de mensajes de devoluciones
     private final ConcurrentLinkedQueue<Message> colaDevolucion = new ConcurrentLinkedQueue<>();
-    // Cola de mensajes de renovaciones
     private final ConcurrentLinkedQueue<Message> colaRenovacion = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<Message> colaPrestamo = new ConcurrentLinkedQueue<>();
 
-    // Guardamos todos los mensajes por su id
-    private final Map<String, Message> mapaMensajes = new ConcurrentHashMap<>();
+    private final Map<String, Message> messagesMap = new ConcurrentHashMap<>();
+    private final Map<String, String> messageStatus = new ConcurrentHashMap<>();
 
-    // Guardamos el estado de cada mensaje: PENDIENTE, OK, FALLIDO
-    private final Map<String, String> estadoMensajes = new ConcurrentHashMap<>();
+    private final DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE;
 
-    private final DateTimeFormatter formatoFecha = DateTimeFormatter.ISO_LOCAL_DATE;
-    private String hostGestorAlmacenamiento = null;
-
-    // Constructor
     protected BibliotecaGCImpl() throws RemoteException {
         super();
     }
 
-    // Publicar una devolución en la cola
     @Override
     public String devolverLibroAsync(String codigoLibro, String usuarioId) throws RemoteException {
         String id = UUID.randomUUID().toString();
-        String fecha = LocalDate.now().format(formatoFecha);
+        String fecha = LocalDate.now().format(fmt);
         Message m = new Message(id, "Devolucion", codigoLibro, usuarioId, fecha, null);
-
         colaDevolucion.add(m);
-        mapaMensajes.put(id, m);
-        estadoMensajes.put(id, "PENDIENTE");
-
-        System.out.println("GC: mensaje publicado en cola Devolucion: " + m);
-
-        // Devolvemos el id del mensaje
+        messagesMap.put(id, m);
+        messageStatus.put(id, "PENDING");
+        System.out.println("GC publicó devolución: " + m);
         return id;
     }
 
-    // Publicar una renovación en la cola
     @Override
     public String renovarLibroAsync(String codigoLibro, String usuarioId) throws RemoteException {
         String id = UUID.randomUUID().toString();
-        String fecha = LocalDate.now().format(formatoFecha);
-        String nuevaFecha = LocalDate.now().plusWeeks(1).format(formatoFecha);
-
+        String fecha = LocalDate.now().format(fmt);
+        String nuevaFecha = LocalDate.now().plusWeeks(1).format(fmt);
         Message m = new Message(id, "Renovacion", codigoLibro, usuarioId, fecha, nuevaFecha);
-
         colaRenovacion.add(m);
-        mapaMensajes.put(id, m);
-        estadoMensajes.put(id, "PENDIENTE");
-
-        System.out.println("GC: mensaje publicado en cola Renovacion: " + m);
-
-        // Devolvemos el id del mensaje
+        messagesMap.put(id, m);
+        messageStatus.put(id, "PENDING");
+        System.out.println("GC publicó renovación: " + m);
         return id;
     }
 
-    // Entregar el siguiente mensaje de la cola que corresponda
     @Override
-    public Message fetchNextMessage(String tema) throws RemoteException {
+    public String prestarLibroAsync(String codigoLibro, String usuarioId) throws RemoteException {
+        String id = UUID.randomUUID().toString();
+        String fecha = LocalDate.now().format(fmt);
+        Message m = new Message(id, "Prestamo", codigoLibro, usuarioId, fecha, null);
+        colaPrestamo.add(m);
+        messagesMap.put(id, m);
+        messageStatus.put(id, "PENDING");
+        System.out.println("GC publicó préstamo: " + m);
+        return id;
+    }
+
+    @Override
+    public Message fetchNextMessage(String topic) throws RemoteException {
         Message m = null;
-        if ("Devolucion".equalsIgnoreCase(tema)) {
+        if ("Devolucion".equalsIgnoreCase(topic)) {
             m = colaDevolucion.poll();
-        } else if ("Renovacion".equalsIgnoreCase(tema)) {
+        } else if ("Renovacion".equalsIgnoreCase(topic)) {
             m = colaRenovacion.poll();
+        } else if ("Prestamo".equalsIgnoreCase(topic)) {
+            m = colaPrestamo.poll();
         }
-
-        if (m != null) {
-            System.out.println("GC: fetchNextMessage(" + tema + ") -> " + m);
-            return m;
-        } else {
-            return null;
-        }
+        if (m != null) System.out.println("GC envía mensaje al actor (" + topic + "): " + m);
+        return m;
     }
 
-    // Confirmar la recepción de un mensaje y marcar su estado
     @Override
-    public void ackMessage(String idMensaje, boolean exito) throws RemoteException {
-        if (exito) {
-            estadoMensajes.put(idMensaje, "OK");
-        } else {
-            estadoMensajes.put(idMensaje, "FALLIDO");
-        }
-        System.out.println("GC: ackMessage: " + idMensaje + " => " + estadoMensajes.get(idMensaje));
+    public void ackMessage(String messageId, boolean success) throws RemoteException {
+        messageStatus.put(messageId, success ? "OK" : "FAILED");
+        System.out.println("GC recibió confirmación: " + messageId + " -> " + messageStatus.get(messageId));
     }
 
-    // Consultar el estado de un mensaje por id
     @Override
-    public String getMessageStatus(String idMensaje) throws RemoteException {
-        return estadoMensajes.getOrDefault(idMensaje, "DESCONOCIDO");
+    public String getMessageStatus(String messageId) throws RemoteException {
+        return messageStatus.getOrDefault(messageId, "UNKNOWN");
     }
 
-    // Configurar el host del Gestor de Almacenamiento
     @Override
     public void setGestorAlmacenamientoEndpoint(String host) throws RemoteException {
-        this.hostGestorAlmacenamiento = host;
-        System.out.println("GC: host del Gestor de Almacenamiento establecido en " + host);
+        System.out.println("Gestor de almacenamiento configurado: " + host);
     }
 }
