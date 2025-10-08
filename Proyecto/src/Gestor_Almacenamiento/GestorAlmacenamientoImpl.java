@@ -19,33 +19,33 @@ public class GestorAlmacenamientoImpl extends UnicastRemoteObject implements Ges
 
     private static final long serialVersionUID = 1L;
     private final BaseDatos baseDatos;
-    private final String role;
-    private String replicaHost = null;
+    private final String rol;
 
-    protected GestorAlmacenamientoImpl(BaseDatos bd, String role) throws RemoteException {
+    public GestorAlmacenamientoImpl(BaseDatos bd, String rol) throws RemoteException {
         super();
         this.baseDatos = bd;
-        this.role = role;
+        this.rol = rol;
     }
 
     @Override
-    public boolean aplicarDevolucionEnBD(String codigoLibro, String usuarioId) throws RemoteException {
-        boolean ok = baseDatos.devolverEjemplar(codigoLibro);
-        System.out.println("[" + role + "] aplicarDevolucionEnBD(" + codigoLibro + ") -> " + ok);
-        if (replicaHost != null) {
-            System.out.println("[" + role + "] replicando devolucion a replica en " + replicaHost);
-        }
-        return ok;
+    public synchronized boolean aplicarDevolucionEnBD(String codigoLibro, String usuarioId) throws RemoteException {
+        boolean exito = baseDatos.devolverEjemplar(codigoLibro);
+        System.out.println("GA (" + rol + "): devolución de " + codigoLibro + " -> " + exito);
+        return exito;
     }
 
     @Override
-    public boolean aplicarRenovacionEnBD(String codigoLibro, String usuarioId, String nuevaFechaEntrega) throws RemoteException {
-        boolean ok = baseDatos.renovarPrestamo(codigoLibro, usuarioId, nuevaFechaEntrega);
-        System.out.println("[" + role + "] aplicarRenovacionEnBD(" + codigoLibro + "," + usuarioId + ") -> " + ok);
-        if (replicaHost != null) {
-            System.out.println("[" + role + "] replicando renovacion a replica en " + replicaHost);
-        }
-        return ok;
+    public synchronized boolean aplicarRenovacionEnBD(String codigoLibro, String usuarioId, String nuevaFechaEntrega) throws RemoteException {
+        boolean exito = baseDatos.renovarPrestamo(codigoLibro, usuarioId, nuevaFechaEntrega);
+        System.out.println("GA (" + rol + "): renovación de " + codigoLibro + " -> " + exito);
+        return exito;
+    }
+
+    @Override
+    public synchronized boolean aplicarPrestamoEnBD(String codigoLibro, String usuarioId) throws RemoteException {
+        boolean exito = baseDatos.prestarEjemplar(codigoLibro);
+        System.out.println("GA (" + rol + "): préstamo de " + codigoLibro + " -> " + exito);
+        return exito;
     }
 
     @Override
@@ -55,10 +55,6 @@ public class GestorAlmacenamientoImpl extends UnicastRemoteObject implements Ges
 
     @Override
     public void replicarOperacion(String op, String codigoLibro, String usuarioId, String fecha) throws RemoteException {
-        System.out.println("[" + role + "] solicitar replicacion op=" + op + " libro=" + codigoLibro);
-    }
-
-    public void setReplicaHost(String host) {
-        this.replicaHost = host;
+        System.out.println("GA (" + rol + ") replicando operación: " + op + " - " + codigoLibro + " - " + usuarioId);
     }
 }

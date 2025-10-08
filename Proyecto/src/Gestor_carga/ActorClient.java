@@ -26,54 +26,58 @@ public class ActorClient {
 
         String hostGC = args[0];
         String hostGA = args[1];
-        String topic = args[2];
+        String topic = args[2].toUpperCase();
+
+        // Validar el tipo de mensaje permitido
+        if (!topic.equals("DEVOLUCION") && !topic.equals("RENOVACION") && !topic.equals("PRESTAMO")) {
+            System.out.println("Error: tipo de operación no reconocido. Solo se permiten DEVOLUCION, RENOVACION o PRESTAMO.");
+            System.exit(1);
+        }
 
         try {
-            // Conexión con el Gestor de Carga
             Registry regGc = LocateRegistry.getRegistry(hostGC, 3000);
             BibliotecaGC stubGc = (BibliotecaGC) regGc.lookup("BibliotecaGCService");
 
-            // Conexión con el Gestor de Almacenamiento (intenta primero el primario)
+            // Intentar conectar con GA primaria y si falla, usar la réplica
             GestorAlmacenamiento stubGa = null;
             try {
                 Registry regGa = LocateRegistry.getRegistry(hostGA, 1099);
                 stubGa = (GestorAlmacenamiento) regGa.lookup("GestorAlmacenamientoPrimary");
-                System.out.println("Actor conectado al Gestor de Almacenamiento PRIMARIO en " + hostGA);
-            } catch (Exception e) {
-                System.out.println("No se pudo conectar al GA primario, intentando con el secundario...");
-                Registry regGaSec = LocateRegistry.getRegistry(hostGA, 1099);
-                stubGa = (GestorAlmacenamiento) regGaSec.lookup("GestorAlmacenamientoReplica");
-                System.out.println("Actor conectado al Gestor de Almacenamiento SECUNDARIO en " + hostGA);
+                System.out.println("Actor conectado con GestorAlmacenamientoPrimary");
+            } catch (Exception ex) {
+                Registry regGaReplica = LocateRegistry.getRegistry(hostGA, 1099);
+                stubGa = (GestorAlmacenamiento) regGaReplica.lookup("GestorAlmacenamientoReplica");
+                System.out.println("Actor conectado con GestorAlmacenamientoReplica");
             }
 
-            System.out.println("ActorClient escuchando topic=" + topic);
+            System.out.println("ActorClient escuchando el tema " + topic);
 
             while (true) {
-                // Pedir un nuevo mensaje al GC
                 Message m = stubGc.fetchNextMessage(topic);
                 if (m != null) {
                     System.out.println(java.time.LocalDateTime.now() + " - Actor recibió: " + m);
-
                     boolean ok = false;
-                    if ("Devolucion".equalsIgnoreCase(m.getTopic())) {
+
+                    if (topic.equals("DEVOLUCION")) {
                         ok = stubGa.aplicarDevolucionEnBD(m.getCodigoLibro(), m.getUsuarioId());
-                    } else if ("Renovacion".equalsIgnoreCase(m.getTopic())) {
+                    } else if (topic.equals("RENOVACION")) {
                         ok = stubGa.aplicarRenovacionEnBD(m.getCodigoLibro(), m.getUsuarioId(), m.getNuevaFechaEntrega());
+                    } else if (topic.equals("PRESTAMO")) {
+                        ok = stubGa.aplicarPrestamoEnBD(m.getCodigoLibro(), m.getUsuarioId());
                     }
 
-                    // Enviar confirmación al GC
                     if (ok) {
                         stubGc.ackMessage(m.getId(), true);
-                        System.out.println("Operacion procesada correctamente, ACK positivo enviado al GC");
+                        System.out.println("Actor: operación procesada correctamente, ACK enviado al GC");
                     } else {
                         stubGc.ackMessage(m.getId(), false);
-                        System.out.println("Operacion fallo, ACK negativo enviado al GC");
+                        System.out.println("Actor: operación falló, ACK de error enviado al GC");
                     }
                 }
 
-                // Espera un segundo antes de volver a preguntar
                 Thread.sleep(1000);
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
