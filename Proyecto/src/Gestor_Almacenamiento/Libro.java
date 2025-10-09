@@ -25,10 +25,9 @@ public class Libro implements Serializable {
     private final String nombre;
     private final List<Ejemplar> ejemplares = new ArrayList<>();
 
-    // cantidad esperada según la cabecera de libros.txt
+    // cantidad esperada según libros.txt
     private int cantidadEsperada = 0;
 
-    // Formato de fecha dd-MM-yyyy
     private static final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     public Libro(String codigo, String nombre, int cantidad) {
@@ -51,7 +50,10 @@ public class Libro implements Serializable {
     public void setCantidadEsperada(int n) { this.cantidadEsperada = n; }
     public int getCantidadEsperada() { return cantidadEsperada; }
 
-    // prestar un ejemplar disponible
+    /**
+     * - Busca el primer ejemplar disponible ('D'), lo marca como prestado ('P')
+     *   y asigna una fecha de entrega (7 días a partir de hoy).
+     */
     public synchronized boolean prestar() {
         for (Ejemplar ej : ejemplares) {
             if (ej.getEstado() == 'D') {
@@ -64,7 +66,10 @@ public class Libro implements Serializable {
         return false;
     }
 
-    // devolver un ejemplar prestado
+    /**
+     * - Busca un ejemplar marcado como prestado ('P'), lo marca como disponible ('D')
+     *   y limpia la fecha.
+     */
     public synchronized boolean devolver() {
         for (Ejemplar ej : ejemplares) {
             if (ej.getEstado() == 'P') {
@@ -76,7 +81,10 @@ public class Libro implements Serializable {
         return false;
     }
 
-    // renovar un ejemplar prestado
+    /**
+     * - Extiende la fecha de un ejemplar prestado por 7 días.
+     * - No hace seguimiento de contadores de renovación por usuario.
+     */
     public synchronized boolean renovar() {
         for (Ejemplar ej : ejemplares) {
             if (ej.getEstado() == 'P') {

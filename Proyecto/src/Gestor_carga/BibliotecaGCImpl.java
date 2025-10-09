@@ -1,18 +1,14 @@
 /**************************************************************************************
-* Fecha: 10/10/2025
-* Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
-* Tema: 
-* - Proyecto préstamo de libros (Sistema Distribuido)
-* Descripción:
-* - Clase Implementación de Servicio Remoto (BibliotecaGCImpl):
-* - Es el Gestor de Carga (GC), punto de entrada para las solicitudes del cliente.
-* - Implementa la mensajería asíncrona usando colecciones concurrentes (`ConcurrentLinkedQueue`) 
-* para simular un Broker de Mensajes interno (colas por tópico: Devolución/Renovación).
-* - Proporciona métodos para recibir solicitudes (`*Async`), devolver una respuesta 
-* inmediata (implícita en el retorno del ID) y guardar el estado.
-* - Maneja el **seguimiento del estado** de cada mensaje (`mapaMensajes`, `estadoMensajes`) 
-* para permitir el polling por parte de los clientes.
-***************************************************************************************/
+ * Fecha: 10/10/2025
+ * Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
+ * Tema:
+ * - Proyecto préstamo de libros (Sistema Distribuido)
+ * Descripción:
+ * - Implementación del Gestor de Carga (GC).
+ * - Gestiona colas separadas por tópico (Devolución, Renovación, Préstamo) usando
+ *   estructuras concurrentes (ConcurrentLinkedQueue, ConcurrentHashMap).
+ * - Mantiene el estado de los mensajes para permitir polling por parte de los clientes.
+ ***************************************************************************************/
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.time.LocalDate;
@@ -22,13 +18,23 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
+/**
+ * BibliotecaGCImpl
+ *
+ * - Publica mensajes asíncronos: cada publicación devuelve inmediatamente un UUID.
+ * - Los Actores consumen los mensajes usando fetchNextMessage(topic).
+ * - Cuando un Actor confirma el procesamiento, se actualiza messageStatus.
+ * - messageStatus usa valores: "PENDING", "OK", "FAILED", "UNKNOWN".
+ */
 public class BibliotecaGCImpl extends UnicastRemoteObject implements BibliotecaGC {
+
     private static final long serialVersionUID = 1L;
 
     private final ConcurrentLinkedQueue<Message> colaDevolucion = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<Message> colaRenovacion = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<Message> colaPrestamo = new ConcurrentLinkedQueue<>();
 
+    // Mapas para seguimiento del mensaje y su estado
     private final Map<String, Message> messagesMap = new ConcurrentHashMap<>();
     private final Map<String, String> messageStatus = new ConcurrentHashMap<>();
 
@@ -38,6 +44,10 @@ public class BibliotecaGCImpl extends UnicastRemoteObject implements BibliotecaG
         super();
     }
 
+    /**
+     * Publica una devolución en la cola correspondiente.
+     * - Crea un Message con ID único, lo encola y marca su estado como "PENDING".
+     */
     @Override
     public String devolverLibroAsync(String codigoLibro, String usuarioId) throws RemoteException {
         String id = UUID.randomUUID().toString();
@@ -50,6 +60,10 @@ public class BibliotecaGCImpl extends UnicastRemoteObject implements BibliotecaG
         return id;
     }
 
+    /**
+     * Publica una renovación en la cola correspondiente.
+     * - Calcula una nuevaFecha (ejemplo: +1 semana) y la añade al Message.
+     */
     @Override
     public String renovarLibroAsync(String codigoLibro, String usuarioId) throws RemoteException {
         String id = UUID.randomUUID().toString();
@@ -63,6 +77,9 @@ public class BibliotecaGCImpl extends UnicastRemoteObject implements BibliotecaG
         return id;
     }
 
+    /**
+     * Publica un préstamo en la cola correspondiente.
+     */
     @Override
     public String prestarLibroAsync(String codigoLibro, String usuarioId) throws RemoteException {
         String id = UUID.randomUUID().toString();
@@ -75,6 +92,11 @@ public class BibliotecaGCImpl extends UnicastRemoteObject implements BibliotecaG
         return id;
     }
 
+    /**
+     * Entrega el siguiente mensaje disponible para un tópico.
+     * - Si no hay mensajes en la cola devuelve null.
+     * - Observación: fetchNextMessage realiza poll() sin bloqueo
+     */
     @Override
     public Message fetchNextMessage(String topic) throws RemoteException {
         Message m = null;
@@ -86,20 +108,31 @@ public class BibliotecaGCImpl extends UnicastRemoteObject implements BibliotecaG
             m = colaPrestamo.poll();
         }
         if (m != null) System.out.println("GC envía mensaje al actor (" + topic + "): " + m);
-        return m;
+          return m;
     }
 
+    /**
+     * Actualiza el estado del mensaje cuando el Actor responde (ACK).
+     * - success = true -> "OK"
+     * - success = false -> "FAILED"
+     */
     @Override
     public void ackMessage(String messageId, boolean success) throws RemoteException {
         messageStatus.put(messageId, success ? "OK" : "FAILED");
         System.out.println("GC recibió confirmación: " + messageId + " -> " + messageStatus.get(messageId));
     }
 
+    /**
+     * Permite a un cliente consultar el estado actual de un mensaje por su ID.
+     */
     @Override
     public String getMessageStatus(String messageId) throws RemoteException {
         return messageStatus.getOrDefault(messageId, "UNKNOWN");
     }
 
+    /**
+     * Método auxiliar para indicar el endpoint del Gestor de Almacenamiento 
+     */
     @Override
     public void setGestorAlmacenamientoEndpoint(String host) throws RemoteException {
         System.out.println("Gestor de almacenamiento configurado: " + host);

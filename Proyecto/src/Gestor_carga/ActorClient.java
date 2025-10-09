@@ -1,24 +1,27 @@
 /**************************************************************************************
-* Fecha: 10/10/2025
-* Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
-* Tema: 
-* - Proyecto préstamo de libros (Sistema Distribuido)
-* Descripción:
-* - Clase Cliente/Actor (ActorClient):
-* - Programa que simula un Actor especializado (Renovación o Devolución) en una sede.
-* - Consume mensajes del Gestor de Carga (GC) mediante polling RMI (`fetchNextMessage`).
-* - Contiene la lógica para conectarse al Gestor de Almacenamiento (GA), intentando 
-* primero la réplica Primary y luego la Replica/Follower para asegurar 
-* tolerancia a fallos.
-* - Aplica la operación en la Base de Datos a través del GA y envía una 
-* confirmación (ACK/NACK) al GC.
-***************************************************************************************/
-
+ * Fecha: 10/10/2025
+ * Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
+ * Tema:
+ * - Proyecto préstamo de libros (Sistema Distribuido)
+ * Descripción:
+ * - Actor especializado (DEVOLUCION / RENOVACION / PRESTAMO).
+ * - Consume mensajes del Gestor de Carga (GC) mediante polling RMI y aplica operaciones
+ *   en el Gestor de Almacenamiento (GA).
+ ***************************************************************************************/
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
+/**
+ * 
+ * 1. Se conecta al GC (puerto 3000) para recibir mensajes.
+ * 2. Intenta conectarse al GA primario; si falla, conecta con la réplica.
+ * 3. Va pidiendo mensajes del tópico correspondiente, cuando recibe un mensaje del GC 
+ *    ejecuta la operación en el GA y notifica el resultado al GC con un acknowledge.
+ *
+ */
 public class ActorClient {
     public static void main(String[] args) {
+
         if (args.length < 3) {
             System.out.println("Uso: java ActorClient <hostGC> <hostGA> <topic>");
             System.exit(1);
@@ -28,17 +31,18 @@ public class ActorClient {
         String hostGA = args[1];
         String topic = args[2].toUpperCase();
 
-        // Validar el tipo de mensaje permitido
+        // Verifica si el topico de creación del actor es válido
         if (!topic.equals("DEVOLUCION") && !topic.equals("RENOVACION") && !topic.equals("PRESTAMO")) {
             System.out.println("Error: tipo de operación no reconocido. Solo se permiten DEVOLUCION, RENOVACION o PRESTAMO.");
             System.exit(1);
         }
 
         try {
+            // Conexión al Gestor de Carga (GC)
             Registry regGc = LocateRegistry.getRegistry(hostGC, 3000);
             BibliotecaGC stubGc = (BibliotecaGC) regGc.lookup("BibliotecaGCService");
 
-            // Intentar conectar con GA primaria y si falla, usar la réplica
+            // Conexión al Gestor de Almacenamiento (GA): preferir primario, si falla usar réplica
             GestorAlmacenamiento stubGa = null;
             try {
                 Registry regGa = LocateRegistry.getRegistry(hostGA, 1099);
@@ -52,12 +56,16 @@ public class ActorClient {
 
             System.out.println("ActorClient escuchando el tema " + topic);
 
+            // El actor mantiene escuchando si el Gestor de Carga (GC) tiene un nuevo mensaje disponible para procesar.
             while (true) {
+
                 Message m = stubGc.fetchNextMessage(topic);
+
                 if (m != null) {
                     System.out.println(java.time.LocalDateTime.now() + " - Actor recibió: " + m);
                     boolean ok = false;
 
+                    // Ejecutar la operación correspondiente en el GA
                     if (topic.equals("DEVOLUCION")) {
                         ok = stubGa.aplicarDevolucionEnBD(m.getCodigoLibro(), m.getUsuarioId());
                     } else if (topic.equals("RENOVACION")) {
@@ -66,6 +74,7 @@ public class ActorClient {
                         ok = stubGa.aplicarPrestamoEnBD(m.getCodigoLibro(), m.getUsuarioId());
                     }
 
+                    // Notificar resultado al GC (Operación fallida o correctamente procesada)
                     if (ok) {
                         stubGc.ackMessage(m.getId(), true);
                         System.out.println("Actor: operación procesada correctamente, ACK enviado al GC");
@@ -76,6 +85,7 @@ public class ActorClient {
                 }
 
                 Thread.sleep(1000);
+
             }
 
         } catch (Exception e) {

@@ -15,8 +15,8 @@ import java.io.Serializable;
 public class Ejemplar implements Serializable {
     private static final long serialVersionUID = 1L;
     private int id;
-    private char estado; // 'D' = Disponible, 'P' = Prestado
-    private String fecha; // fecha de devolución si está prestado
+    private char estado; 
+    private String fecha; 
 
     public Ejemplar(int id, char estado, String fecha) {
         this.id = id;

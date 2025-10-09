@@ -1,17 +1,14 @@
 /**************************************************************************************
-* Fecha: 10/10/2025
-* Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
-* Tema: 
-* - Proyecto préstamo de libros (Sistema Distribuido)
-* Descripción:
-* - Clase Cliente (ClienteBatch):
-* - Simula el Proceso Solicitante (PS), cargando y enviando múltiples peticiones 
-* de Devolución o Renovación desde un archivo de texto.
-* - Utiliza RMI para la comunicación con el Gestor de Carga (GC).
-* - Implementa el patrón asíncrono: envía la solicitud (`*Async`), obtiene un 
-* ID de mensaje, y luego realiza polling (`getMessageStatus`) durante 10 segundos
-* para verificar el estado final de la operación.
-***************************************************************************************/
+ * Fecha: 10/10/2025
+ * Autor: Gabriel Jaramillo, Roberth Méndez, Mariana Osorio Vasquez, Juan Esteban Vera
+ * Tema:
+ * - Proyecto préstamo de libros (Sistema Distribuido)
+ * Descripción:
+ * - Cliente (ClienteBatch) que lee un archivo con peticiones y las envía al GC.
+ * - Implementa patrón asíncrono: envía la petición (*Async), recibe un ID y hace polling
+ *   sobre getMessageStatus() hasta timeout (10s).
+ * - Operaciones: DEVOLUCION, RENOVACION, PRESTAMO.
+ ***************************************************************************************/
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.rmi.registry.LocateRegistry;
@@ -19,6 +16,12 @@ import java.rmi.registry.Registry;
 import java.time.LocalDate;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 1. Se conecta por RMI al GC.
+ * 2. Lee cada línea del archivo (TIPO|codigo|usuario).
+ * 3. Llama al método *Async según el TIPO y obtiene messageId (UUID).
+ * 4. Cada 250ms consulta getMessageStatus(messageId) hasta 10s o hasta obtener OK/FAILED.
+ */
 public class ClienteBatch {
     public static void main(String[] args) {
         if (args.length < 2) {
@@ -47,6 +50,7 @@ public class ClienteBatch {
                 String usuario = parts[2].trim();
 
                 String messageId = null;
+                // Envío según tipo (soporta PRESTAMO ahora)
                 if ("DEVOLUCION".equalsIgnoreCase(tipo)) {
                     messageId = stub.devolverLibroAsync(codigo, usuario);
                     System.out.println(LocalDate.now() + " -> DEVOLUCION enviada (" + codigo + ")");
@@ -58,6 +62,7 @@ public class ClienteBatch {
                     System.out.println(LocalDate.now() + " -> PRESTAMO enviado (" + codigo + ")");
                 }
 
+                // Polling por estado con timeout ~10s
                 if (messageId != null) {
                     String status = "PENDING";
                     int waited = 0;
@@ -75,6 +80,7 @@ public class ClienteBatch {
                         System.out.println("Sin confirmación final para " + tipo + " (" + codigo + ")");
                 }
 
+                // Pequeña pausa entre envíos para no saturar
                 TimeUnit.MILLISECONDS.sleep(200);
             }
             br.close();
