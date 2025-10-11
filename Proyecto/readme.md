@@ -397,3 +397,7 @@ Los resultados demuestran que la arquitectura distribuida propuesta logra un equ
 La **latencia baja** confirma la eficiencia del esquema asíncrono basado en ZeroMQ, mientras que la **alta tasa de éxito** evidencia la confiabilidad de la comunicación entre procesos.  
 El retardo de replicación dentro de los rangos esperados garantiza **consistencia eventual estable**, y el consumo moderado de CPU en modo multihilo muestra que el sistema puede **escalar horizontalmente** sin degradar el desempeño.  
 En conjunto, estas métricas validan que el sistema cumple los **requisitos no funcionales** definidos en el diseño.
+
+### Video de la implementación
+
+https://www.youtube.com/watch?v=2Oji7hMzLgY
