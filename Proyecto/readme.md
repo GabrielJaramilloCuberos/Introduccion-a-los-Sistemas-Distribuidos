@@ -400,4 +400,4 @@ En conjunto, estas métricas validan que el sistema cumple los **requisitos no f
 
 ### Video de la implementación
 
-https://www.youtube.com/watch?v=2Oji7hMzLgY
+[https://www.youtube.com/watch?v=2Oji7hMzLgY](https://www.youtube.com/watch?v=rhdvkc44RGs)
